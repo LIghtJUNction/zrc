@@ -1,0 +1,4 @@
+# ANSI inherits the terminal palette and needs no theme compilation.
+--theme=ansi
+--style=numbers,changes
+--italic-text=always

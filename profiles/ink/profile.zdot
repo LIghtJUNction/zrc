@@ -1,0 +1,11 @@
+# zrc.profile.v1 / Ink
+files/.config/nvim	.config/nvim
+files/.config/kitty	.config/kitty
+files/.config/foot	.config/foot
+files/.config/ghostty	.config/ghostty
+files/.config/tmux	.config/tmux
+files/.config/fzf	.config/fzf
+files/.config/bat	.config/bat
+files/.config/ripgrep	.config/ripgrep
+files/.config/zrc/git.inc	.config/zrc/git.inc
+files/.config/zrc/shell.zsh	.config/zrc/shell.zsh

@@ -1,0 +1,30 @@
+# zrc / Ink
+font-family = JetBrains Mono
+font-size = 13
+window-padding-x = 22
+window-padding-y = 18
+background = #161412
+foreground = #e8ded2
+cursor-color = #d4a373
+cursor-style = bar
+cursor-style-blink = false
+selection-background = #45382e
+selection-foreground = #e8ded2
+background-opacity = 1
+command = zsh
+palette = 0=#302a25
+palette = 1=#dc8e84
+palette = 2=#c4b18b
+palette = 3=#d9b67e
+palette = 4=#bea38f
+palette = 5=#c5a4b6
+palette = 6=#c9b3a0
+palette = 7=#d7ccbf
+palette = 8=#817569
+palette = 9=#edaaa0
+palette = 10=#d7c7a4
+palette = 11=#edd0a0
+palette = 12=#d6bba5
+palette = 13=#ddbfce
+palette = 14=#e0cbb8
+palette = 15=#f3eadf

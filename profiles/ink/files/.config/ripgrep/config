@@ -1,0 +1,7 @@
+# Read by RIPGREP_CONFIG_PATH; ignored files remain ignored.
+--smart-case
+--colors=path:fg:magenta
+--colors=line:fg:yellow
+--colors=column:fg:yellow
+--colors=match:fg:yellow
+--colors=match:style:bold

@@ -1,0 +1,29 @@
+{
+  "schema": "zrc.benchmark.v1",
+  "date_utc": "2026-11-19T22:31:50.856473+00:00",
+  "runs": 30,
+  "warmups": 2,
+  "architecture": "x86_64",
+  "neovim": "NVIM v0.12.6",
+  "method": "warm filesystem, isolated XDG, headless VimEnter completed; no language server",
+  "cases": {
+    "nvim-none": {
+      "median_ms": 5.863,
+      "p95_ms": 16.707,
+      "min_ms": 3.666,
+      "max_ms": 21.434
+    },
+    "zrc-welcome": {
+      "median_ms": 11.6,
+      "p95_ms": 34.912,
+      "min_ms": 7.994,
+      "max_ms": 42.053
+    },
+    "zrc-file": {
+      "median_ms": 22.402,
+      "p95_ms": 78.471,
+      "min_ms": 15.976,
+      "max_ms": 86.342
+    }
+  }
+}

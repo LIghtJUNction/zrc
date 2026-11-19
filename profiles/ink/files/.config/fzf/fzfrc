@@ -1,0 +1,9 @@
+--height=40%
+--layout=reverse
+--border=none
+--info=inline-right
+--no-scrollbar
+--prompt='› '
+--pointer=›
+--marker=·
+--color=bg:#161412,bg+:#2a2521,fg:#a3978b,fg+:#e8ded2,hl:#d4a373,hl+:#d4a373,info:#6f655c,prompt:#d4a373,pointer:#d4a373,marker:#d4a373,spinner:#d4a373,header:#a3978b

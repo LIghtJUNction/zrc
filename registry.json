@@ -1,0 +1,139 @@
+{
+  "schema": "zrc.registry.v1",
+  "version": "0.1.0",
+  "palette": "ink",
+  "modules": [
+    {
+      "id": "nvim",
+      "description": "Native editor, Ink theme, picker, LSP and explicit AI context",
+      "binaries": [
+        "nvim"
+      ],
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/nvim",
+          "destination": ".config/nvim"
+        }
+      ]
+    },
+    {
+      "id": "kitty",
+      "description": "Kitty terminal palette",
+      "binaries": [
+        "kitty"
+      ],
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/kitty",
+          "destination": ".config/kitty"
+        }
+      ]
+    },
+    {
+      "id": "foot",
+      "description": "Foot terminal palette",
+      "binaries": [
+        "foot"
+      ],
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/foot",
+          "destination": ".config/foot"
+        }
+      ]
+    },
+    {
+      "id": "ghostty",
+      "description": "Ghostty terminal palette",
+      "binaries": [
+        "ghostty"
+      ],
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/ghostty",
+          "destination": ".config/ghostty"
+        }
+      ]
+    },
+    {
+      "id": "tmux",
+      "description": "Quiet multiplexer status line",
+      "binaries": [
+        "tmux"
+      ],
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/tmux",
+          "destination": ".config/tmux"
+        }
+      ]
+    },
+    {
+      "id": "fzf",
+      "description": "Warm fuzzy finder palette",
+      "binaries": [
+        "fzf"
+      ],
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/fzf",
+          "destination": ".config/fzf"
+        }
+      ]
+    },
+    {
+      "id": "bat",
+      "description": "Terminal-native source previews",
+      "binaries": [
+        "bat"
+      ],
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/bat",
+          "destination": ".config/bat"
+        }
+      ]
+    },
+    {
+      "id": "ripgrep",
+      "description": "Respect ignore files and use warm match colors",
+      "binaries": [
+        "rg"
+      ],
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/ripgrep",
+          "destination": ".config/ripgrep"
+        }
+      ]
+    },
+    {
+      "id": "git",
+      "description": "Display-only include; identity and signing remain user-owned",
+      "binaries": [
+        "git"
+      ],
+      "activation": "git config --global --add include.path ~/.config/zrc/git.inc",
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/zrc/git.inc",
+          "destination": ".config/zrc/git.inc"
+        }
+      ]
+    },
+    {
+      "id": "shell",
+      "description": "Builtin environment assignments for editor, fzf, bat and rg",
+      "binaries": [
+        "zsh"
+      ],
+      "activation": "source ${XDG_CONFIG_HOME:-$HOME/.config}/zrc/shell.zsh",
+      "mappings": [
+        {
+          "source": "profiles/ink/files/.config/zrc/shell.zsh",
+          "destination": ".config/zrc/shell.zsh"
+        }
+      ]
+    }
+  ]
+}

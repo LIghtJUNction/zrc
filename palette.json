@@ -1,0 +1,32 @@
+{
+  "schema": "zrc.palette.v1",
+  "name": "Ink",
+  "background": "#161412",
+  "surface": "#201d1a",
+  "raised": "#2a2521",
+  "foreground": "#e8ded2",
+  "muted": "#a3978b",
+  "faint": "#6f655c",
+  "accent": "#d4a373",
+  "error": "#e59a91",
+  "keyword": "#c5a4b6",
+  "selection": "#45382e",
+  "ansi": [
+    "#302a25",
+    "#dc8e84",
+    "#c4b18b",
+    "#d9b67e",
+    "#bea38f",
+    "#c5a4b6",
+    "#c9b3a0",
+    "#d7ccbf",
+    "#817569",
+    "#edaaa0",
+    "#d7c7a4",
+    "#edd0a0",
+    "#d6bba5",
+    "#ddbfce",
+    "#e0cbb8",
+    "#f3eadf"
+  ]
+}
