@@ -57,5 +57,50 @@ vim.b.zrc_large_file = true
 require("zrc.lsp").attach(0)
 assert(captured == nil, "large file started LSP")
 vim.fn.executable, vim.lsp.start, vim.fs.root = old_exec, old_start, old_root
-print("PASS: Lua, palette, context, lazy LSP, picker, welcome, large file, Mason")
+-- Exercise the explicit ssmcp split without launching a real service.
+local old_job = vim.fn.jobstart
+local connected
+vim.fn.executable = function(name) return name == "ssmcp" and 1 or old_exec(name) end
+vim.fn.jobstart = function(argv, opts) connected = argv[1] == "ssmcp" and opts.term; return 1 end
+require("zrc.context").connect()
+assert(connected, "explicit ssmcp connection did not create a terminal command")
+vim.cmd.stopinsert()
+vim.cmd.close()
+vim.fn.executable, vim.fn.jobstart = old_exec, old_job
+-- Exercise real asynchronous ripgrep with spaces and ignored paths.
+local old_cwd = vim.uv.cwd()
+vim.cmd.cd(vim.env.ZRC_TEST_FIXTURE)
+local picker = require("zrc.picker")
+local old_open, found = picker.open, nil
+picker.open = function(items) found = items end
+require("zrc.search").files()
+assert(vim.wait(3000, function() return found ~= nil end, 10), "asynchronous file search timed out")
+local has_space = false
+for _, item in ipairs(found) do
+  assert(not item.label:find(".git/", 1, true), "file search traversed .git")
+  if item.label == "space name.txt" then has_space = true end
+end
+assert(has_space, "file search lost spaced filenames")
+picker.open = old_open
+local old_input = vim.ui.input
+vim.ui.input = function(_, callback) callback("zrc_needle") end
+require("zrc.search").grep()
+assert(vim.wait(3000, function() return #vim.fn.getqflist() > 0 end, 10), "text search timed out")
+local match = vim.fn.getqflist()[1]
+assert(match.lnum == 2 and match.col == 1, "text search lost source coordinates")
+vim.ui.input = old_input
+-- Starting from HOME asks for a project and never launches a whole-home scan.
+local old_system, asked = vim.system, false
+vim.cmd.cd(vim.uv.os_homedir())
+vim.system = function() error("whole-home scan was launched") end
+vim.ui.input = function(opts, callback)
+  assert(opts.prompt == "Project directory: ")
+  asked = true
+  callback(nil)
+end
+require("zrc.search").files()
+assert(asked, "home search did not request a project")
+vim.system, vim.ui.input = old_system, old_input
+vim.cmd.cd(old_cwd)
+print("PASS: Lua, palette, context, lazy LSP, picker, welcome, large file, Mason, explicit connect, real rg")
 vim.cmd("qa!")

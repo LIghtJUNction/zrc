@@ -2,6 +2,24 @@ local M = {}
 local function open_file(item)
   vim.cmd.edit(vim.fn.fnameescape(item.value))
 end
+local function project_root(callback)
+  local home = vim.uv.fs_realpath(vim.uv.os_homedir())
+  local markers = { ".git", "Cargo.toml", "package.json", "pyproject.toml", "go.mod" }
+  local path = vim.fs.root(0, markers) or vim.uv.cwd()
+  local function allowed(candidate)
+    local real = vim.uv.fs_realpath(candidate)
+    local stat = real and vim.uv.fs_stat(real)
+    return real and real ~= "/" and real ~= home and stat and stat.type == "directory", real
+  end
+  local ok, directory = allowed(path)
+  if ok then callback(directory); return end
+  vim.ui.input({ prompt = "Project directory: ", completion = "dir" }, function(value)
+    if not value or value == "" then return end
+    local valid, chosen = allowed(vim.fn.expand(value))
+    if valid then callback(chosen)
+    else vim.notify("Choose a project directory inside your home, not the whole home.", vim.log.levels.WARN) end
+  end)
+end
 function M.files()
   if vim.fn.executable("rg") ~= 1 then
     vim.ui.input({ prompt = "File: ", completion = "file" }, function(path)
@@ -9,13 +27,13 @@ function M.files()
     end)
     return
   end
-  local cwd = vim.uv.cwd()
+  project_root(function(cwd)
   local limit = require("zrc").options.max_files
   local chunks, bytes, truncated = {}, 0, false
   local process
   process = vim.system({ "rg", "--files", "--hidden", "--null", "-g", "!.git",
     "-g", "!node_modules", "-g", "!target", "-g", "!vendor", "-g", "!.cache" }, {
-    cwd = cwd,
+    cwd = cwd, timeout = 5000,
     stdout = function(err, data)
       if err or not data then return end
       bytes = bytes + #data
@@ -23,6 +41,7 @@ function M.files()
       else truncated = true; if process then process:kill(15) end end
     end,
   }, function(result)
+    if result.code == 124 then truncated = true end
     vim.schedule(function()
       if result.code ~= 0 and result.code ~= 1 and not truncated then
         vim.notify("File search failed: " .. (result.stderr or ""), vim.log.levels.WARN); return
@@ -34,6 +53,7 @@ function M.files()
       end
       require("zrc.picker").open(items, truncated and "Files · bounded result" or "Files", open_file)
     end)
+  end)
   end)
 end
 function M.recent()
@@ -58,13 +78,13 @@ function M.buffers()
 end
 function M.grep()
   if vim.fn.executable("rg") ~= 1 then vim.notify("Install ripgrep to search text", vim.log.levels.WARN); return end
+  project_root(function(cwd)
   vim.ui.input({ prompt = "Search text: " }, function(query)
     if not query or query == "" then return end
     local chunks, bytes, truncated, process = {}, 0, false, nil
-    local cwd = vim.uv.cwd()
     process = vim.system({ "rg", "--json", "--smart-case", "--max-count=20",
       "-g", "!.git", "-g", "!node_modules", "-g", "!target", "--", query, "." }, {
-      cwd = cwd,
+      cwd = cwd, timeout = 5000,
       stdout = function(err, data)
         if err or not data then return end
         bytes = bytes + #data
@@ -72,6 +92,7 @@ function M.grep()
         else truncated = true; if process then process:kill(15) end end
       end,
     }, function(result)
+      if result.code == 124 then truncated = true end
       vim.schedule(function()
         if result.code ~= 0 and result.code ~= 1 and not truncated then
           vim.notify("Search failed: " .. (result.stderr or ""), vim.log.levels.WARN); return
@@ -91,6 +112,7 @@ function M.grep()
         if #items > 0 then vim.cmd.copen(10) else vim.notify("No matches") end
       end)
     end)
+  end)
   end)
 end
 return M

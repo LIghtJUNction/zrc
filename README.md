@@ -52,7 +52,7 @@ Open Neovim with no file to see the welcome page. Space is the leader key.
 | Space ? | Search the shortcut list |
 | Ctrl-Space | Native completion |
 
-The picker starts one ripgrep process when opened, then filters in memory. It does not run a new process for each keystroke. File results are bounded to 4,000 entries and 512 KiB; text search uses a 2 MiB output bound and 1,000 quickfix entries. Truncated results are labelled. Searches use the current directory and respect ignore files; no indexer runs at startup.
+The picker starts one ripgrep process when opened, then filters in memory. It does not run a new process for each keystroke. File results are bounded to 4,000 entries and 512 KiB; text search uses a 2 MiB output bound and 1,000 quickfix entries. Truncated results are labelled. Each search has a five-second deadline. Searches use the current project and respect ignore files; no indexer runs at startup. When started from the home or filesystem root, the finder asks for a project directory before scanning.
 
 LSP starts when a matching file is opened in a recognized project and its language server is already installed. Rust, C/C++, Go, Python, Lua, shell, JavaScript and TypeScript have native adapters. Existing executables in Neovim's `stdpath("data")/mason/bin` are reused when absent from PATH. zrc does not install servers or launch one for a loose file without a project root. `:ZrcHealth` shows optional executables.
 
@@ -122,3 +122,7 @@ Checks use isolated XDG directories. They exercise profile safety, Neovim's pale
 - [zdot design and recovery](https://github.com/LIghtJUNction/zdot/blob/main/docs/design.md)
 
 MIT license.
+
+## Releasing
+
+Run python3 scripts/bump.py patch to update version metadata. Add --publish to first run local checks, then commit, tag and push from main. A tag starts the archive-and-checksum release workflow; ordinary pushes do not start CI.

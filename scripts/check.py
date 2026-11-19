@@ -26,6 +26,12 @@ def main():
         large = Path(temp) / "large.txt"
         large.write_text("a" * (1024 * 1024 + 1) + "\n")
         env["ZRC_TEST_LARGE_FILE"] = str(large)
+        fixture = Path(temp) / "project"
+        fixture.mkdir()
+        (fixture / ".git").mkdir()
+        (fixture / ".git" / "hidden.txt").write_text("zrc_needle")
+        (fixture / "space name.txt").write_text("first line\nzrc_needle\n")
+        env["ZRC_TEST_FIXTURE"] = str(fixture)
         run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"], env)
         run([sys.executable, "scripts/compose.py", "--modules", "all", "--output", str(Path(temp) / "composed")], env)
         config = ROOT / "profiles/ink/files/.config"

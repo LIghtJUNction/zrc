@@ -27,7 +27,7 @@ Six profile tests cover composition, existing-output preservation, invalid modul
 path validation, symlink rejection and overlapping destinations. Native Neovim
 checks exercise Lua loading, palette, local-only context, lazy LSP, picker filtering
 and selection, welcome-window lifecycle, large-file mode and reuse of installed
-Mason language servers.
+Mason language servers. Real asynchronous ripgrep is checked for filenames with spaces, ignored .git paths and exact match coordinates; a home-directory search is verified to request a project before starting any process.
 
 Kitty, Foot 1.28, Ghostty, fzf, bat, ripgrep, Git and zsh configurations passed
 their installed parsers or execution checks. tmux was not installed and is listed

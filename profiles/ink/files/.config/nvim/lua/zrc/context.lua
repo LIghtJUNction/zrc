@@ -17,8 +17,8 @@ function M.connect()
   if vim.fn.executable("ssmcp") ~= 1 then
     vim.notify("ssmcp is not installed. Run omztty doctor.", vim.log.levels.WARN); return
   end
-  vim.cmd.botright("split")
-  vim.cmd.resize(14)
+  vim.cmd("botright split")
+  vim.cmd("resize 14")
   vim.fn.jobstart({ "ssmcp" }, { term = true })
   vim.cmd.startinsert()
 end
