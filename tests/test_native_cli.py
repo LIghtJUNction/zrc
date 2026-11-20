@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import stat
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -69,6 +70,27 @@ class NativeCliTests(unittest.TestCase):
     def test_deduplication_preserves_requested_order(self):
         out = self.compare(["shell", "nvim", "shell", "git"], "ordered")
         self.assertEqual(json.loads((out / "zrc-profile.json").read_text())["modules"], ["shell", "nvim", "git"])
+
+    @unittest.skipUnless(os.name == "posix", "Unix umask and copied-directory contract")
+    def test_directory_modes_match_python_under_both_umasks(self):
+        for mask in [0o022, 0o077]:
+            with self.subTest(umask=oct(mask)):
+                expected = self.root / ("python-mask-" + str(mask))
+                actual = self.root / ("native-mask-" + str(mask))
+                reference_run = subprocess.run(
+                    [sys.executable, str(ROOT / "scripts/compose.py"),
+                     "--modules", "nvim", "--output", str(expected)],
+                    cwd=self.root, env=self.env, umask=mask,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+                self.assertEqual(reference_run.returncode, 0, reference_run.stderr)
+                native_run = subprocess.run(
+                    [self.binary, "--modules", "nvim", "--output", str(actual)],
+                    cwd=self.root, env=self.env, umask=mask,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=15)
+                self.assertEqual(native_run.returncode, 0, native_run.stderr)
+                self.assertEqual(tree(actual), tree(expected))
+                self.assertEqual(stat.S_IMODE(actual.stat().st_mode), 0o700)
+                self.assertEqual(stat.S_IMODE(expected.stat().st_mode), 0o700)
 
     def test_list_text_json_version_and_help(self):
         data = reference.validated_registry()

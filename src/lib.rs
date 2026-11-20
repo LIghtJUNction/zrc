@@ -343,6 +343,22 @@ pub fn compose(names: &[&str], output: impl AsRef<Path>) -> Result<PathBuf, Erro
                         write_asset(asset, &target.join(suffix))?;
                     }
                 }
+                // Match copytree after populating the subtree: chmod before
+                // writing children would fail for a read-only source directory.
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    for asset in ASSETS.iter().rev().filter(|asset| asset.bytes.is_none()) {
+                        let directory = if asset.path == mapping.source {
+                            target.clone()
+                        } else if let Some(suffix) = asset.path.strip_prefix(&prefix) {
+                            target.join(suffix)
+                        } else {
+                            continue;
+                        };
+                        fs::set_permissions(directory, fs::Permissions::from_mode(asset.mode))?;
+                    }
+                }
             }
             profile.push_str(&format!(
                 "files/{}\t{}\n",
