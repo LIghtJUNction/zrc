@@ -1,0 +1,24 @@
+[package]
+name = "zrc"
+version = "0.1.2"
+edition = "2024"
+rust-version = "1.100"
+description = "Embedded native application profiles for one reviewable zdot deployment"
+license = "MIT"
+repository = "https://github.com/LIghtJUNction/zrc"
+readme = "README.md"
+keywords = ["configuration", "dotfiles", "terminal", "neovim", "project-z"]
+categories = ["command-line-utilities", "config"]
+include = [
+  "src/**", "build.rs", "build_support.rs", "Cargo.toml", "Cargo.lock",
+  "VERSION", "registry.json", "palette.json", "schema/**", "LICENSE", "README.md",
+  "profiles/ink/**", "profiles/ink/files/.config/**", "scripts/**", "tests/**", "docs/**",
+]
+
+[dependencies]
+zconv = "=0.4.0"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
