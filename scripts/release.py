@@ -2,20 +2,17 @@
 """Build a source/profile release from a verified committed version."""
 import argparse
 import hashlib
-import json
 from pathlib import Path
-import re
 import subprocess
+
+from version import read_version
 
 ROOT = Path(__file__).resolve().parents[1]
 
 def build(tag, output):
-    version = (ROOT / "VERSION").read_text().strip()
-    if not re.fullmatch(r"\d+\.\d+\.\d+", version) or tag != "v" + version:
+    version = read_version(ROOT)
+    if tag != "v" + version:
         raise ValueError("tag must exactly match VERSION")
-    registry = json.loads((ROOT / "registry.json").read_text())
-    if registry["version"] != version:
-        raise ValueError("registry version differs from VERSION")
     changed = subprocess.check_output(["git", "status", "--porcelain", "--untracked-files=no"], cwd=ROOT)
     if changed:
         raise ValueError("commit tracked changes before building a release")

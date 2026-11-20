@@ -4,6 +4,19 @@ A small configuration framework for **oh-my-ztty**. One warm palette, native app
 
 zrc gives Neovim a complete editing environment and applies the same Ink colors to terminals and command-line tools. Applications read their own configuration formats. There is no configuration daemon, startup download, or additional plugin manager.
 
+## Install and compose
+
+```sh
+cargo install zrc --version 0.1.2 --locked
+zrc --list
+zrc --list --json
+zrc --modules nvim,fzf,bat,ripgrep,git,shell --output /path/to/new-profile
+```
+
+The parent directory must already exist, and the output directory must be new. The installed Rust executable contains all reviewed configuration assets, including hidden `.config` directories. It can compose from any working directory without Python, a source checkout, or a network connection. Installing the crate does not deploy configuration or install the applications listed below.
+
+For a source checkout, `cargo install --path . --locked` builds the same executable. Cargo needs Rust 1.100 or newer. The Python entry remains available as `python3 scripts/compose.py` with the same selection and output arguments.
+
 ## Modules
 
 | Module | Configuration |
@@ -20,9 +33,7 @@ zrc gives Neovim a complete editing environment and applies the same Ink colors 
 `registry.json` is the module catalog. `profiles/ink/profile.zdot` is the complete static profile. Choose a subset by composing a new profile directory:
 
 ```sh
-python3 scripts/compose.py --list
-python3 scripts/compose.py --list --json
-python3 scripts/compose.py --modules nvim,fzf,bat,ripgrep,git,shell \
+zrc --modules nvim,fzf,bat,ripgrep,git,shell \
   --output /path/to/new-profile
 
 zdot plan --root /path/to/new-profile --target "$HOME" --json
@@ -31,7 +42,7 @@ zdot apply --root /path/to/new-profile --target "$HOME" --backup
 
 Review the plan before deployment. `--backup` lets zdot preserve replaced settings. Use `zdot remove` with the same root to restore them. Compose into a new, stable directory: moving a deployed profile breaks its links.
 
-Python is only used when composing or checking profiles. It is not part of shell or editor startup. zdot owns deployment, backup and rollback; zrc does not duplicate those mechanisms.
+The native CLI composes profiles without an interpreter. Python is needed only for the optional source entry and development checks. Neither entry is part of shell or editor startup. zdot owns deployment, backup and rollback; zrc does not duplicate those mechanisms.
 
 ## Neovim
 
@@ -99,7 +110,7 @@ It changes color output only. Existing identity, credentials, signing, transport
 
 The [registry schema](schema/registry.schema.json) defines module IDs, required executables, optional activation guidance and source-to-destination mappings. Source paths are repository-relative; destinations are target-relative.
 
-Modules must own disjoint destinations. Composition rejects unknown modules, source symlinks, special files, path traversal, overlapping destinations and existing output directories. It copies selected sources into one immutable profile root and emits one `profile.zdot`, avoiding competing deployments to the same home.
+Modules must own disjoint destinations. The crate build rejects source symlinks and special files before embedding assets; the Python entry checks sources when composing. Registry validation rejects path traversal and overlapping destinations. Both entries reject unknown modules, existing outputs (including dangling links), missing parents and symlink parents. Repeated module names keep their first position. Composition finishes in a staging directory beside the output, then renames it into place. The result contains `files/`, `profile.zdot` and `zrc-profile.json` for one zdot deployment.
 
 Add native configuration under `profiles/ink/files`, register disjoint destinations, update the static profile, and validate the application parser before publishing. No application binary, personal configuration, secret, or device identifier belongs in this repository.
 
@@ -107,10 +118,13 @@ Add native configuration under `profiles/ink/files`, register disjoint destinati
 
 ```sh
 python3 scripts/check.py
+python3 scripts/check_cargo.py --package
 python3 scripts/benchmark.py --runs 30
 ```
 
 Checks use isolated XDG directories. They exercise profile safety, Neovim's palette, picker, welcome page, large-file behavior and LSP selection, plus configuration parsers for installed applications. Missing optional application validators are separate from successful checks.
+
+The Cargo gate checks formatting, strict Clippy and Rust tests; compares every module and generated metadata against Python; verifies crate asset inclusion; and installs the extracted crate offline into a temporary directory. It runs that installed binary outside the checkout with an empty PATH. It also checks preserved existing outputs, unknown modules, parent-directory rules and argument errors. Development and release scripts use Python 3.11 or newer.
 
 [Measurements](docs/performance.md) record commands, versions and limitations. They describe a particular machine and workload; zrc makes no unmeasured ranking claim against other configurations.
 
@@ -123,6 +137,12 @@ Checks use isolated XDG directories. They exercise profile safety, Neovim's pale
 
 MIT license.
 
+## Library
+
+The crate exposes `zrc::registry()` for validated module metadata and `zrc::compose(&["nvim", "git"], output)` for the same staging and output rules as the CLI. JSON parsing and string escaping use the published Project Z library [zconv](https://github.com/LIghtJUNction/zconv). Configuration bytes stay embedded in the crate; neither API deploys to HOME or invokes an external program.
+
 ## Releasing
 
-Run python3 scripts/bump.py patch to update version metadata. Add --publish to first run local checks, then commit, tag and push from main. A tag starts the archive-and-checksum release workflow; ordinary pushes do not start CI.
+`python3 scripts/bump.py patch` updates `VERSION`, `registry.json`, `Cargo.toml` and the zrc entry in `Cargo.lock` together. `--publish` runs the local Python and Cargo checks, then commits, tags and atomically pushes from main. A tag starts the existing archive-and-checksum workflow; ordinary pushes do not start CI.
+
+Crates.io publication is a separate, explicit local step using the maintainer's existing Cargo login. [Release instructions](docs/releasing.md) cover the exact-commit dry run, full package/install gate, publication and registry verification. A GitHub archive alone is not evidence that `cargo install zrc` is available.
