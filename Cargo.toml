@@ -12,7 +12,7 @@ categories = ["command-line-utilities", "config"]
 include = [
   "src/**", "build.rs", "build_support.rs", "Cargo.toml", "Cargo.lock",
   "VERSION", "registry.json", "palette.json", "schema/**", "LICENSE", "README.md",
-  "profiles/ink/**", "profiles/ink/files/.config/**", "scripts/**", "tests/**", "docs/**",
+  "profiles/ink/**", "profiles/ink/files/.config/**", "scripts/*.py", "tests/*.py", "tests/*.lua", "docs/**",
 ]
 
 [dependencies]

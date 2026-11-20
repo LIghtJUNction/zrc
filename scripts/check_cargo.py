@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -47,6 +48,8 @@ def check(package=False):
     prefix = "zrc-" + version
     with tarfile.open(archive) as package_file:
         names = {member.name for member in package_file.getmembers() if member.isfile()}
+        if any("__pycache__" in name or name.endswith(".pyc") for name in names):
+            raise ValueError("crate contains Python build caches")
         assets = {path.relative_to(ROOT).as_posix() for path in (ROOT / "profiles").rglob("*") if path.is_file()}
         missing = sorted(path for path in assets if prefix + "/" + path not in names)
         if missing:
@@ -62,6 +65,7 @@ def check(package=False):
             run(["cargo", "install", "--path", str(source), "--root", str(install),
                  "--offline", "--locked"], cwd=work, env=install_env)
             binary = install / "bin" / name
+            shutil.rmtree(source)
             native_tests(binary, env)
             summary = {
                 "schema": "zrc.crate-check.v1", "version": version,
@@ -70,6 +74,7 @@ def check(package=False):
                 "packaged_assets": len(assets), "packaged_files": len(names),
                 "installed_binary_bytes": binary.stat().st_size,
                 "installed_outside_checkout": True, "offline_install": True,
+                "installed_source_removed_before_run": True,
                 "runtime_path_empty": True, "native_cli_tests": 11,
             }
             evidence = ROOT / ".build" / "cargo-validation.json"
