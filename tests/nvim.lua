@@ -57,16 +57,58 @@ vim.b.zrc_large_file = true
 require("zrc.lsp").attach(0)
 assert(captured == nil, "large file started LSP")
 vim.fn.executable, vim.lsp.start, vim.fs.root = old_exec, old_start, old_root
--- Exercise the explicit ssmcp split without launching a real service.
-local old_job = vim.fn.jobstart
-local connected
+-- Use a real terminal job with a harmless fixture, preserving unsaved editing.
+local old_job, old_notify = vim.fn.jobstart, vim.notify
+vim.cmd.enew()
+local source_window, source_buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+vim.api.nvim_buf_set_lines(source_buffer, 0, -1, false, { "unsaved editor contents" })
+local original_windows = #vim.api.nvim_list_wins()
+local function check_original()
+  assert(vim.api.nvim_win_get_buf(source_window) == source_buffer, "connection replaced the editing buffer")
+  assert(vim.bo[source_buffer].buftype == "", "editing buffer became a terminal")
+  assert(vim.bo[source_buffer].modified, "connection lost the modified flag")
+  assert(vim.deep_equal(vim.api.nvim_buf_get_lines(source_buffer, 0, -1, false),
+    { "unsaved editor contents" }), "connection changed unsaved text")
+end
+local connected_job
 vim.fn.executable = function(name) return name == "ssmcp" and 1 or old_exec(name) end
-vim.fn.jobstart = function(argv, opts) connected = argv[1] == "ssmcp" and opts.term; return 1 end
+vim.fn.jobstart = function(argv, opts)
+  assert(vim.deep_equal(argv, { "ssmcp" }) and opts.term, "connection changed the ssmcp command")
+  connected_job = old_job({ "sh", "-c", "printf 'zrc-connect-fixture\\n'" }, opts)
+  return connected_job
+end
 require("zrc.context").connect()
-assert(connected, "explicit ssmcp connection did not create a terminal command")
+local terminal_window, terminal_buffer = vim.api.nvim_get_current_win(), vim.api.nvim_get_current_buf()
+assert(connected_job > 0, "explicit connection did not start a real terminal job")
+assert(terminal_window ~= source_window and terminal_buffer ~= source_buffer,
+  "connection needs its own window and buffer")
+assert(vim.bo[terminal_buffer].buftype == "terminal", "connection did not create a terminal buffer")
+assert(vim.fn.jobwait({ connected_job }, 1000)[1] == 0, "terminal fixture did not exit successfully")
+assert(table.concat(vim.api.nvim_buf_get_lines(terminal_buffer, 0, -1, false), "\n"):
+  find("zrc-connect-fixture", 1, true), "terminal fixture output was lost")
+check_original()
 vim.cmd.stopinsert()
-vim.cmd.close()
-vim.fn.executable, vim.fn.jobstart = old_exec, old_job
+vim.api.nvim_win_close(terminal_window, true)
+if vim.api.nvim_buf_is_valid(terminal_buffer) then vim.api.nvim_buf_delete(terminal_buffer, { force = true }) end
+vim.api.nvim_set_current_win(source_window)
+-- Invalid arguments, failed execution and thrown API errors must remove the empty split.
+for _, failure in ipairs({
+  function() return 0 end,
+  function() return -1 end,
+  function() error("fixture start error") end,
+}) do
+  local buffers, notice = #vim.api.nvim_list_bufs(), nil
+  vim.fn.jobstart = failure
+  vim.notify = function(message, level) notice = { message = message, level = level } end
+  require("zrc.context").connect()
+  assert(vim.api.nvim_get_current_win() == source_window, "failed connection did not restore focus")
+  assert(#vim.api.nvim_list_wins() == original_windows, "failed connection leaked a split")
+  assert(#vim.api.nvim_list_bufs() == buffers, "failed connection leaked an empty buffer")
+  assert(notice and notice.level == vim.log.levels.ERROR and
+    notice.message:find("Could not start ssmcp", 1, true), "failed connection did not explain the error")
+  check_original()
+end
+vim.fn.executable, vim.fn.jobstart, vim.notify = old_exec, old_job, old_notify
 -- Exercise real asynchronous ripgrep with spaces and ignored paths.
 local old_cwd = vim.uv.cwd()
 vim.cmd.cd(vim.env.ZRC_TEST_FIXTURE)

@@ -1,3 +1,9 @@
+## 0.1.1
+
+The explicit Neovim connection opens ssmcp in its own terminal buffer. Unsaved text, the original editing buffer and its window remain intact. Failed starts close the empty split and return focus to the editor with an error message.
+
+Regression coverage exercises a real terminal job with a local fixture, plus invalid, failed and thrown job starts.
+
 Native Ink profiles for Neovim, Kitty, Foot, Ghostty, tmux, fzf, bat, ripgrep, Git and zsh.
 
 The archive contains source configuration, the module registry, composition tools and one complete zdot profile. Applications load their own native formats; no configuration daemon or startup downloader is added.
