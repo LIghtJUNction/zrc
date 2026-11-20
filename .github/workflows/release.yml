@@ -2,13 +2,45 @@ name: Release profiles
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing immutable version tag to validate and publish
+        required: true
+        type: string
 permissions:
   contents: write
+concurrency:
+  group: zrc-release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+          fetch-depth: 0
+      - name: Verify immutable tag checkout
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          import subprocess
+          tag = os.environ["RELEASE_TAG"]
+          if re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", tag) is None:
+              raise SystemExit("release tag must be vMAJOR.MINOR.PATCH")
+          head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+          source = subprocess.check_output(
+              ["git", "rev-parse", "--verify", "refs/tags/" + tag + "^{commit}"],
+              text=True,
+          ).strip()
+          if head != source:
+              raise SystemExit("checkout does not match the immutable tag")
+          print(tag + " " + head)
+          PY
       - name: Validate profile composition
         run: python3 -m unittest discover -s tests -v
       - name: Install reviewed Rust toolchain
@@ -18,8 +50,8 @@ jobs:
       - name: Validate native Cargo package and offline install
         run: python3 scripts/check_cargo.py --package
       - name: Build reviewed profile archive
-        run: python3 scripts/release.py --tag "$GITHUB_REF_NAME"
+        run: python3 scripts/release.py --tag "$RELEASE_TAG"
       - name: Publish archive and checksum
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" .dist/* --verify-tag --title "zrc $GITHUB_REF_NAME" --notes-file docs/release-notes.md
+        run: gh release create "$RELEASE_TAG" .dist/* --verify-tag --title "zrc $RELEASE_TAG" --notes-file docs/release-notes.md
