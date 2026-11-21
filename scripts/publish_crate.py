@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Check an exact committed source and publish its crate using local Cargo login."""
 import argparse
+import os
 from pathlib import Path
 import re
 import subprocess
 import sys
 
+from check_cargo import check
+from release_projection import release_projection
 from version import read_version
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,12 +34,14 @@ def main():
         if not remote_main or remote_main[0] != args.commit:
             parser.error("publish only the reviewed source already on origin/main")
     subprocess.run([sys.executable, str(ROOT / "scripts/check.py")], cwd=ROOT, check=True)
-    subprocess.run([sys.executable, str(ROOT / "scripts/check_cargo.py"), "--package"], cwd=ROOT, check=True)
     command = ["cargo", "publish", "--locked"]
     if not args.publish:
         command.append("--dry-run")
-    print(("Publishing " if args.publish else "Dry run for ") + "zrc " + version, flush=True)
-    subprocess.run(command, cwd=ROOT, check=True)
+    with release_projection(ROOT, expected_commit=args.commit) as release:
+        check(release)
+        print(("Publishing " if args.publish else "Dry run for ") + "zrc " + version, flush=True)
+        env = dict(os.environ, CARGO_TARGET_DIR=str(release.target))
+        subprocess.run(command, cwd=release.path, env=env, check=True)
 
 
 if __name__ == "__main__":
