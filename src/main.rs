@@ -1,5 +1,5 @@
 use std::env;
-use std::ffi::OsString;
+use std::ffi::{OsStr, OsString};
 use std::io::{self, Write};
 use std::path::PathBuf;
 
@@ -11,6 +11,7 @@ Usage:
   zrc --modules all|name,name --output NEW_DIRECTORY
   zrc --version
 
+Use --output=NEW_DIRECTORY when the path starts with a dash.
 The output parent must already exist. Composition does not deploy settings.
 Review with zdot plan, then use zdot apply --backup to deploy explicitly.
 ";
@@ -42,6 +43,20 @@ fn value(args: &mut impl Iterator<Item = OsString>, option: &str) -> Result<OsSt
     }
     Ok(value)
 }
+fn attached_output(argument: &OsStr) -> Option<PathBuf> {
+    const PREFIX: &str = "--output=";
+    #[cfg(unix)]
+    {
+        use std::os::unix::ffi::OsStrExt;
+
+        let path = argument.as_bytes().strip_prefix(PREFIX.as_bytes())?;
+        Some(PathBuf::from(OsStr::from_bytes(path)))
+    }
+    #[cfg(not(unix))]
+    {
+        argument.to_str()?.strip_prefix(PREFIX).map(PathBuf::from)
+    }
+}
 fn run() -> Result<(), Failure> {
     let mut args = env::args_os().skip(1);
     let mut list = false;
@@ -70,14 +85,10 @@ fn run() -> Result<(), Failure> {
             Some(arg) if arg.starts_with("--modules=") => {
                 modules = arg["--modules=".len()..].to_owned()
             }
-            Some(arg) if arg.starts_with("--output=") => {
-                output = Some(PathBuf::from(&arg["--output=".len()..]))
-            }
             _ => {
-                return Err(Failure::Usage(format!(
-                    "unknown argument: {}",
-                    argument.to_string_lossy()
-                )));
+                output = Some(attached_output(&argument).ok_or_else(|| {
+                    Failure::Usage(format!("unknown argument: {}", argument.to_string_lossy()))
+                })?);
             }
         }
     }
@@ -98,6 +109,7 @@ fn run() -> Result<(), Failure> {
     }
     Ok(())
 }
+
 fn main() -> std::process::ExitCode {
     match run() {
         Ok(()) => std::process::ExitCode::SUCCESS,
@@ -116,5 +128,19 @@ fn main() -> std::process::ExitCode {
             eprintln!("zrc: {error}");
             std::process::ExitCode::FAILURE
         }
+    }
+}
+
+#[cfg(all(test, unix))]
+mod tests {
+    use super::*;
+    use std::os::unix::ffi::OsStrExt;
+    use std::path::Path;
+
+    #[test]
+    fn attached_output_preserves_non_utf8_path() {
+        let argument = OsStr::from_bytes(b"--output=-profile-\xff");
+        let path = Path::new(OsStr::from_bytes(b"-profile-\xff"));
+        assert_eq!(attached_output(argument).as_deref(), Some(path));
     }
 }
