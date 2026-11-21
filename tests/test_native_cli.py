@@ -162,10 +162,16 @@ class NativeCliTests(unittest.TestCase):
 
     @unittest.skipUnless(os.name == "posix", "Unix non-UTF-8 filename contract")
     def test_non_utf8_output_name(self):
-        name = os.fsdecode(b"profile-\xff")
-        run = self.run_cli("--modules", "git", "--output", name)
-        self.assertEqual(run.returncode, 0, run.stderr)
-        self.assertTrue((self.root / name / "profile.zdot").is_file())
+        split = os.fsdecode(b"profile-\xff")
+        attached = os.fsdecode(b"-profile-\xff")
+        for name, args in [
+            (split, ("--output", split)),
+            (attached, ("--output=" + attached,)),
+        ]:
+            with self.subTest(name=name):
+                run = self.run_cli("--modules", "git", *args)
+                self.assertEqual(run.returncode, 0, run.stderr)
+                self.assertTrue((self.root / name / "profile.zdot").is_file())
 
 
 if __name__ == "__main__":
